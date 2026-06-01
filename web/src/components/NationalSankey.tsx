@@ -120,6 +120,7 @@ export function NationalSankey({ data, onSelectMuni }: Props) {
                 textAnchor={leftHalf ? "start" : "end"}
               >
                 {truncate(n.label)}
+                <tspan className="node-amount" dx="6">{formatRand(n.value)}</tspan>
               </text>
             </g>
           );

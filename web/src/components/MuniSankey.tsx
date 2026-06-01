@@ -107,6 +107,7 @@ export function MuniSankey({ province, muniName, totals, functions }: Props) {
               <text className="node-label" x={leftHalf ? n.x1 - n.x0 + 7 : -7} y={h / 2} dy="0.35em"
                 textAnchor={leftHalf ? "start" : "end"}>
                 {truncate(n.label)}
+                <tspan className="node-amount" dx="6">{formatRand(n.value)}</tspan>
               </text>
             </g>
           );

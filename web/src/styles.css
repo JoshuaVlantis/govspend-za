@@ -352,3 +352,4 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
 .link--flow { stroke: var(--traceable); }
 .link--debt { stroke: #b3344c; }
 .budget-label { font-size: 11px; }
+.node-amount { fill: var(--ink-soft); font-weight: 700; font-variant-numeric: tabular-nums; }

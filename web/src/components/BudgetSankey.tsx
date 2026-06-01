@@ -10,7 +10,7 @@ interface Props {
 
 const WIDTH = 1200;
 const PAD = 12;
-const RIGHT_LABEL = 260; // room for the right-hand (leaf) labels
+const RIGHT_LABEL = 320; // room for the right-hand labels + inline amounts
 const ROW = 22;
 
 const truncate = (s: string, n = 40) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -91,7 +91,8 @@ export function BudgetSankey({ data, onExploreLocal }: Props) {
                 </title>
               </rect>
               <text className="node-label budget-label" x={n.x1 - n.x0 + 7} y={h / 2} dy="0.35em" textAnchor="start">
-                {truncate(n.label)}
+                {truncate(n.label, 30)}
+                <tspan className="node-amount" dx="6">{formatRand(n.value)}</tspan>
               </text>
             </g>
           );
