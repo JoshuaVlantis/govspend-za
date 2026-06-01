@@ -58,3 +58,13 @@ PROVINCIAL_GRANT_LABELS = {
     "Office of the Premier", "Other Departments", "Public Works, Roads and Transport",
     "Social Development", "Sport, Arts and Culture",
 }
+
+# National main-budget reference figures for 2025/26 ("FY2026"). These are statutory direct
+# charges / sphere shares that are NOT in the ENE votes and have no data API, so they are
+# seeded here from the published 2025 Budget Review (treasury.gov.za). Values in Rand.
+DIRECT_CHARGES_2026 = {"Debt-service cost": 424.9e9}
+PROVINCIAL_SHARE_2026 = {
+    "Provincial equitable share": 633.2e9,
+    "Provincial conditional grants": 134.6e9,
+}
+CONSOLIDATED_TOTAL_2026 = 2590e9  # incl. public entities & social-security funds (context only)

@@ -88,3 +88,17 @@ export interface Profile {
   category: string | null;
   lenses: Record<string, LensProfile>;
 }
+
+export interface BudgetChild {
+  label: string;
+  value: number;
+}
+
+export interface BudgetData {
+  year: number;
+  total: number;
+  nodes: { id: string; label: string; kind: string }[];
+  links: { source: number; target: number; value: number }[];
+  children: Record<string, BudgetChild[]>;
+  note: string;
+}

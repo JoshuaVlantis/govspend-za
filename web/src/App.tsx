@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { IndexData, NationalData } from "./lib/types";
+import type { IndexData, NationalData, BudgetData } from "./lib/types";
 import { NationalSankey } from "./components/NationalSankey";
+import { BudgetSankey } from "./components/BudgetSankey";
 import { MunicipalityProfile } from "./components/MunicipalityProfile";
 import { formatRand } from "./lib/format";
 
@@ -16,12 +17,15 @@ function parseHash(): Route {
 
 export default function App() {
   const [route, setRoute] = useState<Route>(parseHash());
+  const [view, setView] = useState<"budget" | "local">("budget");
   const [index, setIndex] = useState<IndexData | null>(null);
   const [indexError, setIndexError] = useState(false);
   const [lens, setLens] = useState<string>("budget");
   const [year, setYear] = useState<number | null>(null);
   const [national, setNational] = useState<NationalData | null>(null);
   const [nationalError, setNationalError] = useState(false);
+  const [budget, setBudget] = useState<BudgetData | null>(null);
+  const [budgetError, setBudgetError] = useState(false);
 
   useEffect(() => {
     const onHash = () => setRoute(parseHash());
@@ -38,6 +42,10 @@ export default function App() {
         setYear(d.default_year[d.default_lens]);
       })
       .catch(() => setIndexError(true));
+    fetch(`${BASE}data/budget/2026.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setBudget)
+      .catch(() => setBudgetError(true));
   }, []);
 
   useEffect(() => {
@@ -66,16 +74,22 @@ export default function App() {
   const goHome = () => {
     window.location.hash = "#/";
   };
+  const switchView = (v: "budget" | "local") => {
+    setView(v);
+    if (route.view === "muni") goHome();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const lensLabel = index?.lenses.find((l) => l.key === lens)?.label ?? "";
   const years = index?.years[lens] ?? [];
+  const showMuniControls = route.view === "muni" || view === "local";
 
-  if (indexError && !index) {
+  if (indexError && !index && budgetError) {
     return (
       <div className="app">
         <p className="error-banner">
           Couldn’t load the data. If you’re running this locally, make sure the dev server is serving{" "}
-          <code>/data/index.json</code>.
+          <code>/data/</code>.
         </p>
       </div>
     );
@@ -84,46 +98,56 @@ export default function App() {
   return (
     <div className="app">
       <header className="site-header">
-        <button className="brand" onClick={goHome} aria-label="GovSpend ZA home">
+        <button className="brand" onClick={() => switchView("budget")} aria-label="GovSpend ZA home">
           <span className="brand-mark" aria-hidden="true" />
           <span className="brand-text">GovSpend<span className="brand-accent"> ZA</span></span>
         </button>
         <div className="header-controls">
-          {index && (
-            <div className="lens-toggle" role="group" aria-label="Budget or actual">
-              {index.lenses.map((l) => (
-                <button key={l.key} className={lens === l.key ? "active" : ""} onClick={() => changeLens(l.key)}>
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {index && year != null && (
-            <select className="year-select" value={year} aria-label="Financial year"
-              onChange={(e) => setYear(Number(e.target.value))}>
-              {years.map((y) => (
-                <option key={y} value={y}>FY{y}{y === index.default_year[lens] ? " (latest)" : ""}</option>
-              ))}
-            </select>
-          )}
-          {index && (
-            <select className="muni-select" value={route.view === "muni" ? route.code : ""}
-              onChange={(e) => e.target.value && goMuni(e.target.value)} aria-label="Search a municipality">
-              <option value="">Search municipality…</option>
-              {index.provinces.map((p) => (
-                <optgroup key={p} label={p}>
-                  {index.municipalities.filter((m) => m.province === p).map((m) => (
-                    <option key={m.code} value={m.code}>{m.name}</option>
+          <div className="view-nav" role="group" aria-label="View">
+            <button className={view === "budget" && route.view !== "muni" ? "active" : ""} onClick={() => switchView("budget")}>
+              Whole budget
+            </button>
+            <button className={view === "local" || route.view === "muni" ? "active" : ""} onClick={() => switchView("local")}>
+              Local government
+            </button>
+          </div>
+          {showMuniControls && index && (
+            <>
+              <div className="lens-toggle" role="group" aria-label="Budget or actual">
+                {index.lenses.map((l) => (
+                  <button key={l.key} className={lens === l.key ? "active" : ""} onClick={() => changeLens(l.key)}>
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+              {year != null && (
+                <select className="year-select" value={year} aria-label="Financial year"
+                  onChange={(e) => setYear(Number(e.target.value))}>
+                  {years.map((y) => (
+                    <option key={y} value={y}>FY{y}{y === index.default_year[lens] ? " (latest)" : ""}</option>
                   ))}
-                </optgroup>
-              ))}
-            </select>
+                </select>
+              )}
+              <select className="muni-select" value={route.view === "muni" ? route.code : ""}
+                onChange={(e) => e.target.value && goMuni(e.target.value)} aria-label="Search a municipality">
+                <option value="">Search municipality…</option>
+                {index.provinces.map((p) => (
+                  <optgroup key={p} label={p}>
+                    {index.municipalities.filter((m) => m.province === p).map((m) => (
+                      <option key={m.code} value={m.code}>{m.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </>
           )}
         </div>
       </header>
 
       {route.view === "muni" ? (
         <MunicipalityProfile code={route.code} lens={lens} lensLabel={lensLabel} year={year} onBack={goHome} />
+      ) : view === "budget" ? (
+        <BudgetView budget={budget} budgetError={budgetError} onExploreLocal={() => switchView("local")} />
       ) : (
         <Home index={index} national={national} nationalError={nationalError} lens={lens} lensLabel={lensLabel}
           year={year} onSelectMuni={goMuni} />
@@ -131,12 +155,67 @@ export default function App() {
 
       <footer className="site-footer">
         <p>
-          Data: National Treasury <a href="https://municipaldata.treasury.gov.za">Municipal Money</a> API
-          (grants_v2, incexp_v2). Budgeted = original budget; Actual spend = audited actuals, with transfers
-          shown at their allocated (gazetted) value. A civic project — not affiliated with government.
+          Data: National Treasury — Municipal Money (grants_v2, incexp_v2) and the Estimates of National
+          Expenditure / 2025 Budget Review. Budgeted = original budget; Actual spend = audited actuals,
+          transfers at allocated value. A civic project — not affiliated with government.
         </p>
       </footer>
     </div>
+  );
+}
+
+function BudgetView({
+  budget,
+  budgetError,
+  onExploreLocal,
+}: {
+  budget: BudgetData | null;
+  budgetError: boolean;
+  onExploreLocal: () => void;
+}) {
+  const sphere = (id: string) => budget?.links.find((l) => budget.nodes[l.target].id === id)?.value ?? 0;
+
+  return (
+    <main>
+      <section className="hero">
+        <p className="hero-eyebrow">The whole budget · South Africa · FY2026 (2025/26)</p>
+        <h1 className="hero-title">
+          Where the <em>entire</em> national budget goes
+        </h1>
+        <p className="hero-lede">
+          Every rand the state plans to spend — debt-service, national departments, provinces and
+          municipalities. Click a sphere to open it up — the municipal slice we detail elsewhere is a
+          small fraction of the whole.
+        </p>
+        {budget && (
+          <div className="hero-stats">
+            <Stat value={formatRand(budget.total)} label="Main budget · FY2026" />
+            <Stat value={formatRand(sphere("sphere:national"))} label="National departments" />
+            <Stat value={formatRand(sphere("sphere:debt"))} label="Debt-service cost" />
+          </div>
+        )}
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <h2 className="section-title">National Revenue Fund → where it goes</h2>
+          <p className="section-note">
+            Click <strong>National departments</strong> or <strong>Provinces</strong> to expand them; click{" "}
+            <strong>Local government</strong> to drill into all 257 municipalities.
+          </p>
+        </div>
+        <div className="sankey-wrap">
+          {budget ? (
+            <BudgetSankey data={budget} onExploreLocal={onExploreLocal} />
+          ) : budgetError ? (
+            <p className="empty">Couldn’t load the budget data.</p>
+          ) : (
+            <p className="empty">Loading the budget…</p>
+          )}
+        </div>
+        {budget && <p className="source-note">{budget.note}</p>}
+      </section>
+    </main>
   );
 }
 
@@ -174,14 +253,13 @@ function Home({ index, national, nationalError, lens, lensLabel, year, onSelectM
   return (
     <main>
       <section className="hero">
-        <p className="hero-eyebrow">Follow the money · South Africa{year ? ` · ${lensLabel} FY${year}` : ""}</p>
+        <p className="hero-eyebrow">Local government · South Africa{year ? ` · ${lensLabel} FY${year}` : ""}</p>
         <h1 className="hero-title">
-          Where does national government money <em>actually</em> go?
+          Where the money <em>reaches the ground</em>
         </h1>
         <p className="hero-lede">
-          Every year, billions flow from the National Revenue Fund to municipalities. This traces that
-          flow — grant by grant, province by province, town by town — and is honest about where the trail
-          goes cold.
+          The local-government slice: national transfers flowing — grant by grant, province by province,
+          town by town — to all 257 municipalities, and what they spend it on.
         </p>
         {national && (
           <div className="hero-stats">
@@ -194,7 +272,7 @@ function Home({ index, national, nationalError, lens, lensLabel, year, onSelectM
 
       <section className="section">
         <div className="section-head">
-          <h2 className="section-title">The national money flow</h2>
+          <h2 className="section-title">The national money flow to local government</h2>
           <p className="section-note">
             {hasProvincial ? (
               <>Two sources on the left — <strong>National Revenue Fund</strong> and (in purple){" "}

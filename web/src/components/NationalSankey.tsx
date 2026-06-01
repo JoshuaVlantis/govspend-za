@@ -49,6 +49,7 @@ export function NationalSankey({ data, onSelectMuni }: Props) {
       .nodeWidth(15)
       .nodePadding(11)
       .nodeAlign(sankeyLeft)
+      .nodeSort((a: any, b: any) => (b.value || 0) - (a.value || 0)) // largest on top, every column
       .extent([
         [PAD, PAD],
         [WIDTH - PAD, height - PAD],

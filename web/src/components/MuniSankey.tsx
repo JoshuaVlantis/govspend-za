@@ -67,6 +67,7 @@ export function MuniSankey({ province, muniName, totals, functions }: Props) {
       .nodeWidth(15)
       .nodePadding(12)
       .nodeAlign(sankeyLeft)
+      .nodeSort((a: any, b: any) => (b.value || 0) - (a.value || 0))
       .extent([
         [PAD, PAD],
         [WIDTH - PAD, height - PAD],

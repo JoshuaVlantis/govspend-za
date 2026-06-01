@@ -339,3 +339,16 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
   background: color-mix(in srgb, #b3344c 9%, white); border: 1px solid color-mix(in srgb, #b3344c 28%, white);
   color: #742843;
 }
+
+/* ---------- Whole-budget view ---------- */
+.view-nav { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; background: var(--paper-2); }
+.view-nav button { font: inherit; font-size: 13px; padding: 8px 15px; border: 0; background: transparent; color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+.view-nav button:hover { color: var(--ink); }
+.view-nav button.active { background: var(--traceable); color: #fff; }
+.node--sphere { fill: var(--traceable); }
+.node--debt { fill: #b3344c; }
+.node--child { fill: var(--ink); }
+.node--child-local { fill: var(--pooled); }
+.link--flow { stroke: var(--traceable); }
+.link--debt { stroke: #b3344c; }
+.budget-label { font-size: 11px; }
