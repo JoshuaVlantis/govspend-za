@@ -357,6 +357,7 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
 /* Clickable affordance: drillable Sankey nodes get a dotted underline + a › chevron. */
 .node-group--clickable { cursor: pointer; }
 .node-group--clickable .node-label {
+  pointer-events: auto; /* override the base 'none' so clicking the label text works too */
   text-decoration-line: underline;
   text-decoration-style: dotted;
   text-decoration-color: var(--traceable);
