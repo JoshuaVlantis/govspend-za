@@ -200,8 +200,8 @@ function BudgetView({
         <div className="section-head">
           <h2 className="section-title">National Revenue Fund → where it goes</h2>
           <p className="section-note">
-            Click <strong>National departments</strong> or <strong>Provinces</strong> to expand them; click{" "}
-            <strong>Local government</strong> to drill into all 257 municipalities.
+            Everything’s expanded by default. The <strong>underlined</strong> nodes (marked ›) are
+            clickable — the <strong>Local government</strong> ones open the full 257-municipality tool.
           </p>
         </div>
         <div className="sankey-wrap">

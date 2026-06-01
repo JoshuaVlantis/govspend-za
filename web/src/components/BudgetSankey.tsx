@@ -93,6 +93,7 @@ export function BudgetSankey({ data, onExploreLocal }: Props) {
               <text className="node-label budget-label" x={n.x1 - n.x0 + 7} y={h / 2} dy="0.35em" textAnchor="start">
                 {truncate(n.label, 30)}
                 <tspan className="node-amount" dx="6">{formatRand(n.value)}</tspan>
+                {local && <tspan className="node-chevron" dx="5">›</tspan>}
               </text>
             </g>
           );

@@ -121,6 +121,7 @@ export function NationalSankey({ data, onSelectMuni }: Props) {
               >
                 {truncate(n.label)}
                 <tspan className="node-amount" dx="6">{formatRand(n.value)}</tspan>
+                {clickable && <tspan className="node-chevron" dx="5">›</tspan>}
               </text>
             </g>
           );

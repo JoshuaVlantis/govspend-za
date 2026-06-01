@@ -353,3 +353,15 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
 .link--debt { stroke: #b3344c; }
 .budget-label { font-size: 11px; }
 .node-amount { fill: var(--ink-soft); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Clickable affordance: drillable Sankey nodes get a dotted underline + a › chevron. */
+.node-group--clickable { cursor: pointer; }
+.node-group--clickable .node-label {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--traceable);
+  text-underline-offset: 3px;
+}
+.node-group--clickable:hover .node-label { text-decoration-style: solid; fill: var(--ink); font-weight: 600; }
+.node-group--clickable:hover .node { fill: var(--traceable); }
+.node-chevron { fill: var(--traceable); font-weight: 800; }
