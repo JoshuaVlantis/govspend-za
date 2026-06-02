@@ -1,9 +1,10 @@
 """Export the consolidated national-budget Sankeys (FY2026).
 
   budget/2026.json       - NRF -> 4 spheres, with drill-down children
-  budget/2026-full.json  - the ENTIRE tree expanded on one page: NRF -> spheres ->
-                           departments / provincial components / provinces -> all 257
-                           municipalities (DFS-ordered so children group under parents)
+  budget/2026-full.json  - the ENTIRE tree on one page: NRF -> spheres -> departments /
+                           provincial components / provinces -> all 257 municipalities ->
+                           EVERY municipal spend function. DFS-ordered so children group
+                           under parents. Deliberately enormous.
 
 Run: python3 etl/national_export.py
 """
@@ -25,6 +26,12 @@ NOTE = (
     "other spheres); provincial equitable share + conditional grants and debt-service from the "
     "2025 Budget Review; local government from Municipal Money. Fully consolidated total "
     "(incl. public entities & social-security funds) is ~R2.59tn."
+)
+FULL_NOTE = NOTE + (
+    " The local-government arm continues into EVERY municipality's spending by function. A "
+    "municipality spends far more than the national money reaching it — the gap is its own "
+    "revenue (rates, electricity, water), which is not drawn as an inflow, so municipal bars are "
+    "wider than their inflow. At this scale the smallest towns' slices can be sub-pixel."
 )
 
 
@@ -60,12 +67,21 @@ def gather(conn):
     ):
         muni_by_prov[prov].append((code, name, amount))
 
+    muni_functions = defaultdict(list)
+    for code, fn, amount in conn.execute(
+        "SELECT muni_code, function_label, amount FROM spend_function "
+        "WHERE financial_year=? AND amount_type='ORGB' AND amount>0 ORDER BY muni_code, amount DESC",
+        (YEAR,),
+    ):
+        muni_functions[code].append((fn, amount))
+
     return {
         "dept_own": dept_own,
         "national_own": sum(dept_own.values()),
         "local_by_prov": dict(local_by_prov),
         "local_total": sum(local_by_prov.values()),
         "muni_by_prov": muni_by_prov,
+        "muni_functions": muni_functions,
         "debt": config.DIRECT_CHARGES_2026["Debt-service cost"],
         "prov_total": sum(config.PROVINCIAL_SHARE_2026.values()),
     }
@@ -139,12 +155,15 @@ def build_full(g):
                 pi = node(f"province:{prov}", prov, "province")
                 link(si, pi, ptotal)
                 for code, name, amount in sorted(g["muni_by_prov"].get(prov, []), key=lambda x: -x[2]):
-                    link(pi, node(f"muni:{code}", name, "municipality"), amount)
+                    mi = node(f"muni:{code}", name, "municipality")
+                    link(pi, mi, amount)
+                    for fn, fval in g["muni_functions"].get(code, []):  # every function, no cap
+                        link(mi, node(f"fn:{code}:{fn}", fn, "function"), fval)
 
     return {
         "year": YEAR,
         "total": round(g["national_own"] + g["prov_total"] + g["local_total"] + g["debt"]),
-        "nodes": nodes, "links": links, "note": NOTE,
+        "nodes": nodes, "links": links, "note": FULL_NOTE,
     }
 
 
@@ -155,9 +174,9 @@ def main():
     dump(OUT / f"{YEAR}.json", build_overview(g))
     full = build_full(g)
     dump(OUT / f"{YEAR}-full.json", full)
-    munis = sum(len(v) for v in g["muni_by_prov"].values())
+    fns = sum(1 for n in full["nodes"] if n["kind"] == "function")
     print(f"budget/{YEAR}.json + {YEAR}-full.json | full tree: {len(full['nodes'])} nodes, "
-          f"{len(full['links'])} links ({munis} municipalities)")
+          f"{len(full['links'])} links ({fns} spend-function leaves)")
     conn.close()
 
 

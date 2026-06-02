@@ -256,9 +256,10 @@ function FullView({
           <button className="back-link" onClick={onBack}>← Back to the overview</button>
           <h2 className="section-title">The entire budget, on one page</h2>
           <p className="section-note">
-            National Revenue Fund → spheres → 44 departments / provinces → <strong>all 257
-            municipalities</strong>, fully expanded. It’s deliberately huge — scroll down. Municipality
-            nodes open their profile.
+            National Revenue Fund → spheres → 44 departments / provinces → all 257 municipalities →
+            <strong> every spend function</strong> (~7,500 nodes). It’s deliberately enormous and may take
+            a few seconds to draw — scroll, and zoom out to take it all in. Municipality nodes open their
+            profile. (Municipal spending exceeds the national money reaching it — the rest is own revenue.)
           </p>
         </div>
         <div className="sankey-wrap">

@@ -369,5 +369,5 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
 
 /* Full-tree (everything-on-one-page) Sankey: dense, so smaller labels. */
 .full-sankey { min-width: 900px; }
-.full-label { font-size: 9px; }
-.full-label .node-amount { font-size: 9px; }
+.full-label { font-size: 8px; }
+.full-label .node-amount { font-size: 8px; }
