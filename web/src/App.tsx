@@ -5,6 +5,7 @@ import { BudgetSankey } from "./components/BudgetSankey";
 import { FullSankey } from "./components/FullSankey";
 import { MunicipalityProfile } from "./components/MunicipalityProfile";
 import { formatRand } from "./lib/format";
+import { exportFullTreePdf } from "./lib/exportPdf";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -249,18 +250,47 @@ function FullView({
   onBack: () => void;
   onSelectMuni: (code: string) => void;
 }) {
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(false);
+
+  const downloadPdf = async () => {
+    if (!data || exporting) return;
+    setExporting(true);
+    setExportError(false);
+    try {
+      await exportFullTreePdf(data, `govspend-za-budget-${data.year}.pdf`);
+    } catch {
+      setExportError(true);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <main>
       <section className="section">
         <div className="section-head">
-          <button className="back-link" onClick={onBack}>← Back to the overview</button>
+          <div className="full-toolbar">
+            <button className="back-link" onClick={onBack}>← Back to the overview</button>
+            {data && (
+              <button className="pdf-btn" onClick={downloadPdf} disabled={exporting}>
+                {exporting ? "Building PDF…" : "Download as PDF"}
+              </button>
+            )}
+          </div>
           <h2 className="section-title">The entire budget, on one page</h2>
           <p className="section-note">
             National Revenue Fund → spheres → 44 departments / provinces → all 257 municipalities →
-            <strong> every spend function</strong> (~7,500 nodes). It’s deliberately enormous and may take
-            a few seconds to draw — scroll, and zoom out to take it all in. Municipality nodes open their
-            profile. (Municipal spending exceeds the national money reaching it — the rest is own revenue.)
+            <strong> every spend function</strong> (~7,500 nodes), each on its own row so nothing overlaps.
+            It’s deliberately enormous — scroll to explore, or <strong>Download as PDF</strong> for the whole
+            graph. Ribbon and node thickness scale with the rand value across the whole budget, so a R425bn
+            sphere dwarfs a R12bn town; exact rands are printed on every node. Municipality nodes open their profile.
           </p>
+          {exportError && (
+            <p className="empty">
+              Couldn’t build the PDF — try Chrome or Firefox, which handle very large pages best.
+            </p>
+          )}
         </div>
         <div className="sankey-wrap">
           {data ? (

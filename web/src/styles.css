@@ -369,5 +369,22 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
 
 /* Full-tree (everything-on-one-page) Sankey: dense, so smaller labels. */
 .full-sankey { display: block; }
-.full-label { font-size: 11px; }
+.full-sankey .link { stroke-opacity: 0.5; }
+.full-sankey .link--spend { stroke: var(--spend); stroke-opacity: 0.55; }
+.full-sankey .link--muni-flow { stroke: var(--ink-faint); stroke-opacity: 0.4; }
+.full-label { font-size: 11px; fill: var(--ink-soft); }
 .full-label .node-amount { font-size: 11px; }
+/* Internal-node labels sit over a fan of ribbons; a paper-coloured pill keeps them legible
+   (in print and on screen) without resorting to text halos svg2pdf can't reproduce. */
+.label-pill { fill: var(--paper-2); opacity: 0.92; }
+.full-sankey .node-group--clickable .full-label { fill: var(--ink); }
+
+/* Full-tree toolbar + PDF export button */
+.full-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.pdf-btn {
+  font: inherit; font-size: 13px; font-weight: 600; padding: 9px 16px; border-radius: 999px;
+  border: 1px solid var(--traceable); background: var(--traceable); color: #fff; cursor: pointer;
+  transition: background 160ms ease, opacity 160ms ease; white-space: nowrap;
+}
+.pdf-btn:hover:not(:disabled) { background: #18604f; }
+.pdf-btn:disabled { opacity: 0.6; cursor: progress; }
