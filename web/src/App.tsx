@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import type { IndexData, NationalData, BudgetData } from "./lib/types";
+import type { IndexData, NationalData, BudgetData, FullTreeData } from "./lib/types";
 import { NationalSankey } from "./components/NationalSankey";
 import { BudgetSankey } from "./components/BudgetSankey";
+import { FullSankey } from "./components/FullSankey";
 import { MunicipalityProfile } from "./components/MunicipalityProfile";
 import { formatRand } from "./lib/format";
 
 const BASE = import.meta.env.BASE_URL;
 
 type Route = { view: "home" } | { view: "muni"; code: string };
+type View = "budget" | "local" | "full";
 
 function parseHash(): Route {
   const parts = window.location.hash.replace(/^#\/?/, "").split("/");
@@ -17,7 +19,7 @@ function parseHash(): Route {
 
 export default function App() {
   const [route, setRoute] = useState<Route>(parseHash());
-  const [view, setView] = useState<"budget" | "local">("budget");
+  const [view, setView] = useState<View>("budget");
   const [index, setIndex] = useState<IndexData | null>(null);
   const [indexError, setIndexError] = useState(false);
   const [lens, setLens] = useState<string>("budget");
@@ -26,6 +28,8 @@ export default function App() {
   const [nationalError, setNationalError] = useState(false);
   const [budget, setBudget] = useState<BudgetData | null>(null);
   const [budgetError, setBudgetError] = useState(false);
+  const [fullTree, setFullTree] = useState<FullTreeData | null>(null);
+  const [fullError, setFullError] = useState(false);
 
   useEffect(() => {
     const onHash = () => setRoute(parseHash());
@@ -58,6 +62,15 @@ export default function App() {
       .catch(() => setNationalError(true));
   }, [lens, year]);
 
+  // Lazy-load the (large) full tree only when first requested.
+  useEffect(() => {
+    if (view !== "full" || fullTree || fullError) return;
+    fetch(`${BASE}data/budget/2026-full.json`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setFullTree)
+      .catch(() => setFullError(true));
+  }, [view, fullTree, fullError]);
+
   const changeLens = (next: string) => {
     if (!index) return;
     setLens(next);
@@ -74,7 +87,7 @@ export default function App() {
   const goHome = () => {
     window.location.hash = "#/";
   };
-  const switchView = (v: "budget" | "local") => {
+  const switchView = (v: View) => {
     setView(v);
     if (route.view === "muni") goHome();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -82,7 +95,9 @@ export default function App() {
 
   const lensLabel = index?.lenses.find((l) => l.key === lens)?.label ?? "";
   const years = index?.years[lens] ?? [];
-  const showMuniControls = route.view === "muni" || view === "local";
+  const onMuni = route.view === "muni";
+  const showMuniControls = onMuni || view === "local";
+  const budgetActive = !onMuni && (view === "budget" || view === "full");
 
   if (indexError && !index && budgetError) {
     return (
@@ -104,12 +119,8 @@ export default function App() {
         </button>
         <div className="header-controls">
           <div className="view-nav" role="group" aria-label="View">
-            <button className={view === "budget" && route.view !== "muni" ? "active" : ""} onClick={() => switchView("budget")}>
-              Whole budget
-            </button>
-            <button className={view === "local" || route.view === "muni" ? "active" : ""} onClick={() => switchView("local")}>
-              Local government
-            </button>
+            <button className={budgetActive ? "active" : ""} onClick={() => switchView("budget")}>Whole budget</button>
+            <button className={view === "local" || onMuni ? "active" : ""} onClick={() => switchView("local")}>Local government</button>
           </div>
           {showMuniControls && index && (
             <>
@@ -128,7 +139,7 @@ export default function App() {
                   ))}
                 </select>
               )}
-              <select className="muni-select" value={route.view === "muni" ? route.code : ""}
+              <select className="muni-select" value={onMuni ? route.code : ""}
                 onChange={(e) => e.target.value && goMuni(e.target.value)} aria-label="Search a municipality">
                 <option value="">Search municipality…</option>
                 {index.provinces.map((p) => (
@@ -144,10 +155,13 @@ export default function App() {
         </div>
       </header>
 
-      {route.view === "muni" ? (
+      {onMuni ? (
         <MunicipalityProfile code={route.code} lens={lens} lensLabel={lensLabel} year={year} onBack={goHome} />
+      ) : view === "full" ? (
+        <FullView data={fullTree} error={fullError} onBack={() => switchView("budget")} onSelectMuni={goMuni} />
       ) : view === "budget" ? (
-        <BudgetView budget={budget} budgetError={budgetError} onExploreLocal={() => switchView("local")} />
+        <BudgetView budget={budget} budgetError={budgetError} onExploreLocal={() => switchView("local")}
+          onShowFull={() => switchView("full")} />
       ) : (
         <Home index={index} national={national} nationalError={nationalError} lens={lens} lensLabel={lensLabel}
           year={year} onSelectMuni={goMuni} />
@@ -168,10 +182,12 @@ function BudgetView({
   budget,
   budgetError,
   onExploreLocal,
+  onShowFull,
 }: {
   budget: BudgetData | null;
   budgetError: boolean;
   onExploreLocal: () => void;
+  onShowFull: () => void;
 }) {
   const sphere = (id: string) => budget?.links.find((l) => budget.nodes[l.target].id === id)?.value ?? 0;
 
@@ -213,7 +229,48 @@ function BudgetView({
             <p className="empty">Loading the budget…</p>
           )}
         </div>
+        <button className="show-all" onClick={onShowFull}>
+          See the full tree — all 257 municipalities on one page →
+        </button>
         {budget && <p className="source-note">{budget.note}</p>}
+      </section>
+    </main>
+  );
+}
+
+function FullView({
+  data,
+  error,
+  onBack,
+  onSelectMuni,
+}: {
+  data: FullTreeData | null;
+  error: boolean;
+  onBack: () => void;
+  onSelectMuni: (code: string) => void;
+}) {
+  return (
+    <main>
+      <section className="section">
+        <div className="section-head">
+          <button className="back-link" onClick={onBack}>← Back to the overview</button>
+          <h2 className="section-title">The entire budget, on one page</h2>
+          <p className="section-note">
+            National Revenue Fund → spheres → 44 departments / provinces → <strong>all 257
+            municipalities</strong>, fully expanded. It’s deliberately huge — scroll down. Municipality
+            nodes open their profile.
+          </p>
+        </div>
+        <div className="sankey-wrap">
+          {data ? (
+            <FullSankey data={data} onSelectMuni={onSelectMuni} />
+          ) : error ? (
+            <p className="empty">Couldn’t load the full tree.</p>
+          ) : (
+            <p className="empty">Building the full tree (this one’s big)…</p>
+          )}
+        </div>
+        {data && <p className="source-note">{data.note}</p>}
       </section>
     </main>
   );

@@ -366,3 +366,8 @@ main { width: min(100% - 40px, var(--maxw)); margin-inline: auto; flex: 1; }
 .node-group--clickable:hover .node-label { text-decoration-style: solid; fill: var(--ink); font-weight: 600; }
 .node-group--clickable:hover .node { fill: var(--traceable); }
 .node-chevron { fill: var(--traceable); font-weight: 800; }
+
+/* Full-tree (everything-on-one-page) Sankey: dense, so smaller labels. */
+.full-sankey { min-width: 900px; }
+.full-label { font-size: 9px; }
+.full-label .node-amount { font-size: 9px; }

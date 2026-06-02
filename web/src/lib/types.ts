@@ -102,3 +102,11 @@ export interface BudgetData {
   children: Record<string, BudgetChild[]>;
   note: string;
 }
+
+export interface FullTreeData {
+  year: number;
+  total: number;
+  nodes: { id: string; label: string; kind: string; order: number }[];
+  links: { source: number; target: number; value: number }[];
+  note: string;
+}
